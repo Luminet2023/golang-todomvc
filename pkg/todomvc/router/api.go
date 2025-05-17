@@ -1,8 +1,11 @@
 package router
 
 import (
+	"html/template"
+	"io/fs"
 	"net/http"
 	"todomvc/pkg/todomvc/router/handler/todo"
+	"todomvc/public"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -13,11 +16,15 @@ func Router() *gin.Engine {
 
 	router.Use(gin.Logger())
 	router.Use(cors.Default())
-	router.StaticFS("/js", http.Dir("./statics/js"))
-	router.StaticFS("/node_modules", http.Dir("./statics/node_modules"))
-	router.LoadHTMLGlob("templates/*")
+	htmlFS, _ := fs.Sub(public.Public, "dist")
+	jsFS, _ := fs.Sub(public.Public, "dist/js")
+	node_modulesFS, _ := fs.Sub(public.Public, "dist/node_modules")
+	router.StaticFS("/js", http.FS(jsFS))
+	router.StaticFS("/node_modules", http.FS(node_modulesFS))
+	templ := template.Must(template.New("").ParseFS(htmlFS, "index.html"))
+	router.SetHTMLTemplate(templ)
 	router.GET("/", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "index.tmpl", nil)
+		c.HTML(http.StatusOK, "index.html", nil)
 	})
 
 	todoRoute := router.Group("/todo")
